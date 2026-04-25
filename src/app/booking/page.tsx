@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   CreditCard,
@@ -21,7 +22,10 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function BookingPage() {
+function BookingContent() {
+  const searchParams = useSearchParams();
+  const destination = searchParams.get("destination") || "Goa";
+  const routeName = searchParams.get("route") || `${destination} Explorer`;
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [promoApplied, setPromoApplied] = useState(false);
   const [step, setStep] = useState(1);
@@ -91,7 +95,7 @@ export default function BookingPage() {
                     <MapPin className="w-4 h-4" /> Route
                   </span>
                   <span className="text-sm text-white font-medium">
-                    Beach Explorer — Goa
+                    {routeName}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-white/5">
@@ -346,5 +350,13 @@ export default function BookingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24 pb-16 flex items-center justify-center text-white">Loading...</div>}>
+      <BookingContent />
+    </Suspense>
   );
 }

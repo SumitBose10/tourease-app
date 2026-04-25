@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   MapPin,
@@ -22,46 +23,58 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const popularAttractions = [
-  "Calangute Beach",
-  "Fort Aguada",
-  "Basilica of Bom Jesus",
-  "Dudhsagar Falls",
-  "Anjuna Flea Market",
-  "Chapora Fort",
-  "Palolem Beach",
-  "Se Cathedral",
-];
+const attractionsMap: Record<string, string[]> = {
+  Goa: [
+    "Calangute Beach",
+    "Fort Aguada",
+    "Basilica of Bom Jesus",
+    "Dudhsagar Falls",
+    "Anjuna Flea Market",
+    "Chapora Fort",
+    "Palolem Beach",
+    "Se Cathedral",
+  ],
+  Jaipur: ["Hawa Mahal", "Amer Fort", "City Palace", "Jantar Mantar", "Jal Mahal", "Nahargarh Fort", "Albert Hall Museum", "Birla Mandir"],
+  Manali: ["Rohtang Pass", "Solang Valley", "Hadimba Temple", "Vashisht Baths", "Old Manali", "Jogini Waterfall", "Manu Temple", "Beas River"],
+  Varanasi: ["Dashashwamedh Ghat", "Kashi Vishwanath Temple", "Sarnath", "Manikarnika Ghat", "Assi Ghat", "Ramnagar Fort", "Banaras Hindu University", "Tulsi Manas Temple"],
+  Kerala: ["Munnar Tea Gardens", "Alleppey Backwaters", "Wayanad", "Kochi", "Thekkady", "Kovalam Beach", "Kumarakom", "Varkala Beach"],
+  Udaipur: ["City Palace", "Lake Pichola", "Jag Mandir", "Fateh Sagar Lake", "Saheliyon Ki Bari", "Sajjangarh Palace", "Vintage Car Museum", "Ambrai Ghat"],
+  Rishikesh: ["Laxman Jhula", "Ram Jhula", "Triveni Ghat", "Parmarth Niketan", "Neelkanth Mahadev Temple", "Beatles Ashram", "Shivpuri", "Neer Garh Waterfall"],
+  Darjeeling: ["Tiger Hill", "Batasia Loop", "Darjeeling Himalayan Railway", "Peace Pagoda", "Padmaja Naidu Himalayan Zoological Park", "Happy Valley Tea Estate", "Ghoom Monastery", "Observatory Hill"],
+};
 
-const suggestedRoutes = [
-  {
-    name: "Beach Explorer",
-    stops: 5,
-    duration: "6h 30m",
-    distance: "42 km",
-    cost: "₹850",
-    transport: "Car",
-    efficiency: 92,
-  },
-  {
-    name: "Heritage Trail",
-    stops: 4,
-    duration: "5h 15m",
-    distance: "35 km",
-    cost: "₹650",
-    transport: "Bike",
-    efficiency: 88,
-  },
-  {
-    name: "Budget Adventure",
-    stops: 6,
-    duration: "8h",
-    distance: "55 km",
-    cost: "₹420",
-    transport: "Bus",
-    efficiency: 78,
-  },
-];
+const getSuggestedRoutes = (destination: string, stopsCount: number) => {
+  const stops = stopsCount > 0 ? stopsCount : 4;
+  return [
+    {
+      name: `${destination} Explorer`,
+      stops: stops,
+      duration: `${Math.max(2, Math.floor(stops * 1.5))}h ${Math.floor((stops * 1.5 % 1) * 60)}m`,
+      distance: `${Math.max(10, stops * 8)} km`,
+      cost: `₹${Math.max(400, stops * 150)}`,
+      transport: "Car",
+      efficiency: 92,
+    },
+    {
+      name: `Heritage Trail`,
+      stops: Math.max(1, stops - 1),
+      duration: `${Math.max(1, Math.floor(stops * 1.2))}h 15m`,
+      distance: `${Math.max(8, stops * 6)} km`,
+      cost: `₹${Math.max(250, stops * 100)}`,
+      transport: "Bike",
+      efficiency: 88,
+    },
+    {
+      name: `Budget Adventure`,
+      stops: stops + 1,
+      duration: `${Math.max(3, stops * 2)}h`,
+      distance: `${Math.max(15, stops * 10)} km`,
+      cost: `₹${Math.max(100, stops * 50)}`,
+      transport: "Bus",
+      efficiency: 78,
+    },
+  ];
+};
 
 const transportIcons: Record<string, React.ElementType> = {
   Car: Car,
@@ -69,14 +82,22 @@ const transportIcons: Record<string, React.ElementType> = {
   Bus: Bus,
 };
 
-export default function PlanPage() {
-  const [destination, setDestination] = useState("Goa");
-  const [selectedAttractions, setSelectedAttractions] = useState<string[]>([
-    "Calangute Beach",
-    "Fort Aguada",
-    "Dudhsagar Falls",
-  ]);
+function PlanContent() {
+  const searchParams = useSearchParams();
+  const initialDestination = searchParams.get("destination") || "Goa";
+  const [destination, setDestination] = useState(initialDestination);
+  const currentAttractions = attractionsMap[destination] || attractionsMap["Goa"];
+
+  const [selectedAttractions, setSelectedAttractions] = useState<string[]>(
+    currentAttractions.slice(0, 3)
+  );
+
+  useEffect(() => {
+    setSelectedAttractions(currentAttractions.slice(0, 3));
+  }, [destination]);
   const [showResults, setShowResults] = useState(false);
+
+  const dynamicRoutes = getSuggestedRoutes(destination, selectedAttractions.length);
 
   const toggleAttraction = (name: string) => {
     setSelectedAttractions((prev) =>
@@ -193,7 +214,7 @@ export default function PlanPage() {
                 the best route.
               </p>
               <div className="flex flex-wrap gap-2">
-                {popularAttractions.map((attr) => {
+                {currentAttractions.map((attr) => {
                   const selected = selectedAttractions.includes(attr);
                   return (
                     <button
@@ -273,11 +294,11 @@ export default function PlanPage() {
                       Optimized Routes
                     </h3>
                     <span className="text-xs text-slate-500">
-                      {suggestedRoutes.length} routes found
+                      {dynamicRoutes.length} routes found
                     </span>
                   </div>
 
-                  {suggestedRoutes.map((route, i) => {
+                  {dynamicRoutes.map((route, i) => {
                     const TransportIcon = transportIcons[route.transport] || Car;
                     return (
                       <motion.div
@@ -340,7 +361,7 @@ export default function PlanPage() {
                         </div>
 
                         <Link
-                          href="/vehicles"
+                          href={`/vehicles?destination=${encodeURIComponent(destination)}&route=${encodeURIComponent(route.name)}`}
                           className="mt-4 btn-primary w-full !py-2.5 text-sm"
                         >
                           Select Route
@@ -356,5 +377,13 @@ export default function PlanPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PlanPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24 pb-16 flex items-center justify-center text-white">Loading...</div>}>
+      <PlanContent />
+    </Suspense>
   );
 }

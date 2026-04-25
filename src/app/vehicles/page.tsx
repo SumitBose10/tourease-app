@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Car,
@@ -142,7 +143,10 @@ const filterTypes: { label: string; value: VehicleType }[] = [
   { label: "Ride Share", value: "rideshare" },
 ];
 
-export default function VehiclesPage() {
+function VehiclesContent() {
+  const searchParams = useSearchParams();
+  const destination = searchParams.get("destination") || "Goa";
+  const routeName = searchParams.get("route") || `${destination} Explorer`;
   const [activeFilter, setActiveFilter] = useState<VehicleType>("all");
   const [sortBy, setSortBy] = useState<"price" | "rating" | "eta">("price");
 
@@ -314,7 +318,7 @@ export default function VehiclesPage() {
                 </div>
 
                 <Link
-                  href="/booking"
+                  href={`/booking?destination=${encodeURIComponent(destination)}&route=${encodeURIComponent(routeName)}`}
                   className="btn-primary w-full !py-2.5 text-sm"
                 >
                   Book Now
@@ -326,5 +330,13 @@ export default function VehiclesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VehiclesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24 pb-16 flex items-center justify-center text-white">Loading...</div>}>
+      <VehiclesContent />
+    </Suspense>
   );
 }

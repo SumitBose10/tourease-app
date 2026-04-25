@@ -200,7 +200,7 @@ export default function ExplorePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Link href="/plan" className="block">
+              <Link href={`/plan?destination=${encodeURIComponent(dest.name)}`} className="block">
                 <div
                   className={`card group relative overflow-hidden ${dest.borderGlow}`}
                 >
